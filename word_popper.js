@@ -1,5 +1,5 @@
-﻿TILE_SIZE = 60;
-PADDING = 10;
+﻿TILE_SIZE = 80;
+PADDING = 15;
 
 _GRID_WIDTH_TILES = 10;
 _GRID_HEIGHT_TILES = 7;
@@ -91,7 +91,7 @@ class Tile {
             "line-height": `${TILE_SIZE}px`,
         });
         
-        $div.on("pointerenter", this._onPointerEnter);
+        $div.on("pointerover", this._onPointerEnter);
 
         this._$div = $div;
     }
