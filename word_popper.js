@@ -13,7 +13,9 @@ $.urlParam = function (name) {
     return (results !== null) ? results[1] || 0 : false;
 }
 
-Math.seed = $.urlParam("seed") || 526;
+//new puzzle every day
+var daysSinceEpoch = Math.floor(new Date().getTime() / 1000 / 60 / 60 / 24);
+Math.seed = $.urlParam("seed") || daysSinceEpoch;
 
 // in order to work 'Math.seed' must NOT be undefined,
 // so in any case, you HAVE to provide a Math.seed
