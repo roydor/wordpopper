@@ -300,7 +300,7 @@ class Game {
 
     AddSolvedWord(word) {
         let score = this.ScoreWord(word);
-        this._$words.append(`<div>${word} (${score.base} + ${score.bonus})</div>`);
+        this._$words.append(`<div>${word} (base:${score.base} + length_bonus:${score.bonus})</div>`);
     }
 
     ScoreWord(word) {
