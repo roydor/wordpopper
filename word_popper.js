@@ -276,15 +276,26 @@ class Game {
     }
 
     AddSolvedWord(word) {
-        this._$words.append(`<div>${word}</div>`);
+        let score = this.ScoreWord(word);
+        this._$words.append(`<div>${word} (${score.base} + ${score.bonus})</div>`);
     }
 
-    UpdateScore(word) {
+    ScoreWord(word) {
         let sum = 0;
         for (const c of word) {
             sum += _LETTER_SCORES[c];
         }
-        this._score += Math.floor(sum * word.length / 2);
+        let bonus = Math.floor(sum * word.length / 2) - sum;
+
+        return {
+            base: sum,
+            bonus: bonus,
+            total: sum + bonus,
+        }
+    }
+
+    UpdateScore(word) {
+        this._score += this.ScoreWord(word).total;
         this._$score.text(this._score);
     }
 
