@@ -5,6 +5,29 @@ _GRID_WIDTH_TILES = 10;
 _GRID_HEIGHT_TILES = 7;
 
 
+//URL is http://www.example.com/mypage?ref=registration&email=bobo@example.com
+$.urlParam = function (name) {
+    var results = new RegExp('[\?&]' + name + '=([^&#]*)')
+        .exec(window.location.search);
+
+    return (results !== null) ? results[1] || 0 : false;
+}
+
+Math.seed = $.urlParam("seed") || 1738;
+
+// in order to work 'Math.seed' must NOT be undefined,
+// so in any case, you HAVE to provide a Math.seed
+Math.random = function (max, min) {
+    max = max || 1;
+    min = min || 0;
+
+    Math.seed = (Math.seed * 9301 + 49297) % 233280;
+    var rnd = Math.seed / 233280;
+
+    return min + rnd * (max - min);
+}
+
+
 class Tile {
     constructor(letter, row, col) {
         this.row = row;
