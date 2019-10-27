@@ -13,7 +13,7 @@ $.urlParam = function (name) {
     return (results !== null) ? results[1] || 0 : false;
 }
 
-Math.seed = $.urlParam("seed") || 1738;
+Math.seed = $.urlParam("seed") || 526;
 
 // in order to work 'Math.seed' must NOT be undefined,
 // so in any case, you HAVE to provide a Math.seed
