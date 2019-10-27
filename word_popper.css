@@ -2,6 +2,7 @@
     margin: 0px;
     padding: 0px;
     background: black;
+    touch-action: none;
 }
 .game-container {
     background: #bbada0;
