@@ -91,7 +91,7 @@ class Tile {
             "line-height": `${TILE_SIZE}px`,
         });
         
-        $div.on("mouseenter touchenter", this._onPointerEnter);
+        $div.on("pointerenter", this._onPointerEnter);
 
         this._$div = $div;
     }
@@ -252,8 +252,8 @@ class Game {
             "height": `${PADDING + _GRID_HEIGHT_TILES * (TILE_SIZE + PADDING)}px`,
         });
 
-        this._$container.on("mousedown touchstart", this._onPointerDown);
-        this._$container.on("mouseup touchend", this._onPointerUp);
+        this._$container.on("mousedown pointerdown", this._onPointerDown);
+        this._$container.on("mouseup pointerup", this._onPointerUp);
 
         this._constructGrid();
     }
