@@ -232,9 +232,10 @@ class Grid {
 
 // Singleton game manager;
 class Game {
-    constructor($container, $score) {
+    constructor($container, $score, $words) {
         this._$container = $container;
         this._$score = $score;
+        this._$words = $words;
         this._score = 0;
         this.PointerDown = false;
         this.Selection = [];
@@ -268,9 +269,14 @@ class Game {
         var currentWord = GameManager.CurrentWord();
         if (WordList.has(currentWord)) {
             GameManager.PopSelection();
+            GameManager.AddSolvedWord(currentWord);
             GameManager.UpdateScore(currentWord);
         }
         GameManager.ClearSelection();
+    }
+
+    AddSolvedWord(word) {
+        this._$words.append(`<div>${word}</div>`);
     }
 
     UpdateScore(word) {
@@ -309,7 +315,6 @@ class Game {
     }
 
     Select(tile) {
-
         // Don't select a tile twice
         if (this.Selection.includes(tile))
             return;
@@ -336,6 +341,6 @@ class Game {
 };
 
 $(document).ready(() => {
-    GameManager = new Game($(".game-container"), $(".game-score"));
+    GameManager = new Game($(".game-container"), $(".game-score"), $(".words-container"));
     GameManager.Start();
 });
