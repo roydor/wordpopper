@@ -6,33 +6,57 @@
 .game-container {
     background: #bbada0;
     border-radius: 6px;
-    width: 500px;
-    height: 500px;
+    overflow: hidden;
+    position:relative;
 }
 
 .tile {
     border-radius: 3px;
     border: 1px solid black;
     box-sizing: border-box;
-    background-color: lightblue;
-    color: #f9f6f2;
+    background-color: lightskyblue;
+    color: white;
     font-size: 35px;
     font-family: sans-serif;
     position: absolute;
     text-align: center;
     user-select: none;
     text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
-
-    transition: top 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+    transition: top 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53), left 0.3s ease-in;
 }
 
-.selected {
-    background-color: darkblue;
-}
 
 .popped {
     transition: top 1s cubic-bezier(0.6, -0.28, 0.735, 0.045), left 1s linear;
     animation:spin 4s linear infinite;
 }
 
+.tile.vowel {
+    background-color: deepskyblue;
+}
+
+.tile.selected {
+    background-color: darkblue;
+}
+
+.tile .score {
+    position: absolute;
+    font-size: 13px;
+    line-height: 13px;
+    padding:3px;
+    text-align: right;
+    bottom: 0px;
+    right: 0px;
+    left: unset;
+    top:unset;
+    z-index:2;
+}
+
 @keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
+
+.score-container {
+    font-size: 20px;
+    font-family: sans-serif;
+    color: white;
+    display:inline-flex;
+}

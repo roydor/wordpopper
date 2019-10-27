@@ -1,8 +1,8 @@
 ﻿TILE_SIZE = 60;
-PADDING = 6;
+PADDING = 10;
 
-_GRID_WIDTH_TILES = 7;
-_GRID_HEIGHT_TILES = 10;
+_GRID_WIDTH_TILES = 10;
+_GRID_HEIGHT_TILES = 7;
 
 
 class Tile {
@@ -10,6 +10,7 @@ class Tile {
         this.row = row;
         this.col = col;
         this.letter = letter;
+        this.score = _LETTER_SCORES[letter];
 
         this._createElement();
         this.updatePosition(row, col);
@@ -57,7 +58,7 @@ class Tile {
         });
     }
 
-    _onMouseEnter(ev) {
+    _onPointerEnter(ev) {
         if (GameManager.PointerDown) {
             var tile = GameManager.Grid.getFromDiv(ev.target);
             if (tile) GameManager.Select(tile);
@@ -65,17 +66,34 @@ class Tile {
     }
 
     _createElement() {
-        this._$div = $(document.createElement("div"));
-        this._$div.addClass('tile');
+        let $div = $(document.createElement("div"));
+        let $score = $(document.createElement("div"));
+        let $text = $(document.createElement("div"));
+
+        $text.addClass("letter");
+        $score.addClass("score");
+
+        $text.text(this.letter.toUpperCase());
+        $score.text(this.score);
+
+        $div.append($text[0]);
+        $div.append($score[0]);
+
+        $div.addClass('tile');
+
+        if ("aeiouy".includes(this.letter))
+            $div.addClass("vowel");
         // are variables in css a thing?
 
-        this._$div.css({
+        $div.css({
             "width": `${TILE_SIZE}px`,
             "height": `${TILE_SIZE}px`,
             "line-height": `${TILE_SIZE}px`,
         });
-        this._$div.text(this.letter.toUpperCase());
-        this._$div.on("mouseenter", this._onMouseEnter);
+        
+        $div.on("pointerenter", this._onPointerEnter);
+
+        this._$div = $div;
     }
 }
 
@@ -88,7 +106,29 @@ function generateLetterFrequencies(letterMap) {
     return letterString.toLowerCase();
 }
 
-// Scrabble frequencies
+
+function generateLetterScores(scoreMap) {
+    var scores = {}
+    for (const [key, value] of Object.entries(scoreMap)) {
+        for (const char of key) {
+            scores[char] = value;
+        }
+    }
+    return scores;
+}
+
+// https://scrabble.hasbro.com/en-us/faq
+_LETTER_SCORES = generateLetterScores({
+    aeioulnstr: 1,
+    dg: 2,
+    bcmp: 3,
+    fhvwy: 4,
+    k: 5,
+    jx: 8,
+    qz: 10,
+});
+
+
 _LETTERS = generateLetterFrequencies({
     a: 9,
     b: 2,
@@ -150,7 +190,7 @@ class Grid {
     }
 
     getFromDiv(div) {
-        return this._divMap.get(div);
+        return this._divMap.get(div) || this._divMap.get(div.parentNode);
     }
 
     updateTilePosition(tile, newRow, newCol) {
@@ -161,24 +201,41 @@ class Grid {
 
     removeTile(tile) {
         this._grid[tile.row][tile.col] = null;
-        this._divMap[tile.div()] = null;
+        this._divMap.delete(tile.div());
+
+        var gravityMovedTile = false;
 
         // Apply gravity to above tiles
         for (var row = tile.row - 1; row >= 0; row--) {
             var nextTile = this._grid[row][tile.col];
             if (!nextTile)
-                break;
+                continue; // Don't break incase of a C shape word.
 
             // move it down
             this.updateTilePosition(nextTile, row + 1, tile.col);
+            gravityMovedTile = true;
+        }
+
+        // if this created an empty column, move it all left.
+        if (!gravityMovedTile && tile.row == this._numRows - 1) {
+            for (var row = 0; row < this._numRows; row++) {
+                for (var col = tile.col + 1; col < this._numCols; col++) {
+                    var nextTile = this._grid[row][col];
+                    if (!nextTile)
+                        continue;
+                    this.updateTilePosition(nextTile, row, col - 1);
+                }
+            }
         }
     }
 }
 
 // Singleton game manager;
 class Game {
-    constructor($container) {
+    constructor($container, $score) {
         this._$container = $container;
+        this._$score = $score;
+        this._score = 0;
         this.PointerDown = false;
         this.Selection = [];
     }
@@ -194,22 +251,47 @@ class Game {
             "height": `${PADDING + _GRID_HEIGHT_TILES * (TILE_SIZE + PADDING)}px`,
         });
 
-        this._$container.on("mousedown", this._onMouseDown);
-        this._$container.on("mouseup", this._onMouseUp);
+        this._$container.on("pointerdown", this._onPointerDown);
+        this._$container.on("pointerup", this._onPointerUp);
 
         this._constructGrid();
     }
 
-    _onMouseDown(ev) {
+    _onPointerDown(ev) {
         GameManager.PointerDown = true;
         var tile = GameManager.Grid.getFromDiv(ev.target);
         if (tile) GameManager.Select(tile);
+    }
+
+    _onPointerUp() {
+        GameManager.PointerDown = false;
+        var currentWord = GameManager.CurrentWord();
+        if (WordList.has(currentWord)) {
+            GameManager.PopSelection();
+            GameManager.UpdateScore(currentWord);
+        }
+        GameManager.ClearSelection();
+    }
+
+    UpdateScore(word) {
+        let sum = 0;
+        for (const c of word) {
+            sum += _LETTER_SCORES[c];
+        }
+        this._score += Math.floor(sum * word.length / 2);
+        this._$score.text(this._score);
     }
 
     CurrentWord() {
         var word = "";
         this.Selection.forEach((tile) => word += tile.letter);
         return word;
+    }
+
+    CurrentWordScore() {
+        var sum = 0;
+        this.Selection.forEach((tile) => sum += tile.score);
+        return sum;
     }
 
     ClearSelection() {
@@ -227,25 +309,33 @@ class Game {
     }
 
     Select(tile) {
+
+        // Don't select a tile twice
         if (this.Selection.includes(tile))
             return;
 
+        var lastTile = this.GetLastSelected();
+        if (lastTile) {
+            var deltaRow = Math.abs(tile.row - lastTile.row);
+            var deltaCol = Math.abs(tile.col - lastTile.col);
+            if (deltaRow > 1 || deltaCol > 1)
+                return;
+        }
+
+        this._select(tile);
+    }
+
+    _select(tile) {
         tile.select();
         this.Selection.push(tile);
     }
 
-    _onMouseUp() {
-        GameManager.PointerDown = false;
-        var currentWord = GameManager.CurrentWord();
-        console.log(currentWord);
-        if (WordList.has(GameManager.CurrentWord())) {
-            GameManager.PopSelection();
-        }
-        GameManager.ClearSelection();
+    GetLastSelected() {
+        return this.Selection[this.Selection.length - 1];
     }
 };
 
 $(document).ready(() => {
-    GameManager = new Game($('.game-container'));
+    GameManager = new Game($(".game-container"), $(".game-score"));
     GameManager.Start();
 });
