@@ -295,7 +295,7 @@ class Game {
         this._longTapToken = setTimeout(() => {
             GameManager.MakeWild(GameManager.Selection[0]);
             GameManager.ClearSelection();
-        }, 1000);
+        }, 750);
     }
 
     _constructGrid() {
