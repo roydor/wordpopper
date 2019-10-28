@@ -58,6 +58,8 @@ class Tile {
     makeWild() {
         this.letter = " ";
         this.score = _LETTER_SCORES[" "];
+        this._$div.removeClass("vowel");
+        this._$div.addClass("wild");
 
         this._$div.children(".letter").text(this.letter);
         this._$div.children(".score").text(this.score);
@@ -120,6 +122,9 @@ class Tile {
 
         if ("aeiouy".includes(this.letter))
             $div.addClass("vowel");
+
+        if (this.letter == " ")
+            $div.addClass("wild");
         // are variables in css a thing?
 
         $div.css({

@@ -36,6 +36,10 @@
     background-color: deepskyblue;
 }
 
+.tile.wild {
+    background-color: royalblue;
+}
+
 .tile.selected {
     background-color: darkblue;
 }
