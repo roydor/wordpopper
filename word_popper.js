@@ -29,6 +29,12 @@ Math.random = function (max, min) {
     return min + rnd * (max - min);
 }
 
+function distance(x1, y1, x2, y2) {
+    let dx = x2 - x1;
+    let dy = y2 - y1;
+    return Math.sqrt(dx * dx + dy + dy);
+};
+
 
 class Tile {
     constructor(letter, row, col) {
@@ -70,10 +76,7 @@ class Tile {
         let centerX = this.left() + tileRadius;
         let centerY = this.top() + tileRadius;
 
-        let dx = centerX - x;
-        let dy = centerY - y;
-
-        return dx * dx + dy * dy < (tileRadius * tileRadius) * 0.5;
+        return distance(centerX, centerY, x, y) < tileRadius * 0.75;
     }
 
     updatePosition(newRow, newCol) {
@@ -284,6 +287,8 @@ class Game {
         this.Hints = 3;
         this._$wordPreview = $wordPreview;
         this._longTapToken = null;
+        this._longTapStartX;
+        this._longTapStartY;
     }
 
     _clearLongTap() {
@@ -291,7 +296,9 @@ class Game {
         this._longTapToken = null;
     }
 
-    _startLongTap() {
+    _startLongTap(x, y) {
+        this._longTapStartX = x;
+        this._longTapStartY = y;
         this._longTapToken = setTimeout(() => {
             GameManager.MakeWild(GameManager.Selection[0]);
             GameManager.ClearSelection();
@@ -323,12 +330,14 @@ class Game {
 
     _onPointerMove(ev) {
         if (GameManager.PointerDown) {
-            GameManager._clearLongTap();
             let x = ev.clientX;
             let y = ev.clientY;
             var target = document.elementFromPoint(x, y);
             var tile = GameManager.Grid.getFromDiv(target);
             var lastTile = GameManager.GetLastSelected();
+
+            if (distance(x, y, GameManager._longTapStartX, GameManager._longTapStartY) > 5)
+                GameManager._clearLongTap();
 
             if (tile && tile != lastTile && tile.touchIsClose(x, y)) {
                 GameManager.Select(tile);
@@ -342,7 +351,7 @@ class Game {
         var tile = GameManager.Grid.getFromDiv(ev.target);
         if (tile) {
             GameManager.Select(tile);
-            GameManager._startLongTap();
+            GameManager._startLongTap(ev.clientX, ev.clientY);
         }
     }
 
