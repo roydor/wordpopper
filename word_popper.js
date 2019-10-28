@@ -369,6 +369,7 @@ class Game {
         var currentWord = GameManager._wildWordFind(GameManager.CurrentWord());
         if (WordList.has(currentWord)) {
             GameManager.PopSelection();
+            console.log("BUG: Wildcards are getting scored with their wild value, not 0.");
             GameManager.AddSolvedWord(currentWord);
             GameManager.UpdateScore(currentWord);
         }
@@ -377,9 +378,9 @@ class Game {
 
 
     MakeWild(tile) {
-        if (GameManager.Hints > 0) {
+        if (GameManager.Hints-- > 0) {
+            this._$words.append(`<div>Turned ${tile.letter.toUpperCase()} wild! (${GameManager.Hints} wildcards remaining.)</div>`)
             tile.makeWild();
-            GameManager.Hints--;
         }
     }
 
