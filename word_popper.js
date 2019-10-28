@@ -63,7 +63,7 @@ class Tile {
         let dx = centerX - x;
         let dy = centerY - y;
 
-        return dx * dx + dy * dy < tileRadius * tileRadius;
+        return dx * dx + dy * dy < (tileRadius * tileRadius) * 0.5;
     }
 
     updatePosition(newRow, newCol) {
