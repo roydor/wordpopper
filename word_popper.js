@@ -274,7 +274,7 @@ class Grid {
 
 // Singleton game manager;
 class Game {
-    constructor($container, $score, $words) {
+    constructor($container, $score, $words, $wordPreview) {
         this._$container = $container;
         this._$score = $score;
         this._$words = $words;
@@ -282,6 +282,20 @@ class Game {
         this.PointerDown = false;
         this.Selection = [];
         this.Hints = 3;
+        this._$wordPreview = $wordPreview;
+        this._longTapToken = null;
+    }
+
+    _clearLongTap() {
+        clearTimeout(this._longTapToken);
+        this._longTapToken = null;
+    }
+
+    _startLongTap() {
+        this._longTapToken = setTimeout(() => {
+            GameManager.MakeWild(GameManager.Selection[0]);
+            GameManager.ClearSelection();
+        }, 1000);
     }
 
     _constructGrid() {
@@ -289,16 +303,20 @@ class Game {
     }
 
     Start() {
+        let gameWidth = PADDING + _GRID_WIDTH_TILES * (TILE_SIZE + PADDING);
         // Resize container to look a bit nicer.
         this._$container.css({
-            "width": `${PADDING + _GRID_WIDTH_TILES * (TILE_SIZE + PADDING)}px`,
+            "width": `${gameWidth}px`,
             "height": `${PADDING + _GRID_HEIGHT_TILES * (TILE_SIZE + PADDING)}px`,
         });
+
+        this._$wordPreview.css({
+            "width": `${gameWidth}px`
+        })
 
         this._$container.on("pointerdown", this._onPointerDown);
         this._$container.on("pointerup", this._onPointerUp);
         this._$container.on("pointermove", this._onPointerMove);
-        this._$container.on("dblclick", this._onDoubleClick);
 
         this._constructGrid();
     }
@@ -309,24 +327,23 @@ class Game {
             let y = ev.clientY;
             var target = document.elementFromPoint(x, y);
             var tile = GameManager.Grid.getFromDiv(target);
+            var lastTile = GameManager.GetLastSelected();
 
-            if (tile && tile.touchIsClose(x, y))
+            if (tile && tile != lastTile && tile.touchIsClose(x, y)) {
+                GameManager._clearLongTap();
                 GameManager.Select(tile);
+            }
         }
     }
 
-    _onDoubleClick(ev) {
-        if (GameManager.Hints > 0) {
-            var tile = GameManager.Grid.getFromDiv(ev.target);
-            tile.makeWild();
-            GameManager.Hints--;
-        }
-    }
 
     _onPointerDown(ev) {
         GameManager.PointerDown = true;
         var tile = GameManager.Grid.getFromDiv(ev.target);
-        if (tile) GameManager.Select(tile);
+        if (tile) {
+            GameManager.Select(tile);
+            GameManager._startLongTap();
+        }
     }
 
 
@@ -347,6 +364,7 @@ class Game {
 
     _onPointerUp() {
         GameManager.PointerDown = false;
+        GameManager._clearLongTap();
 
         var currentWord = GameManager._wildWordFind(GameManager.CurrentWord());
         if (WordList.has(currentWord)) {
@@ -355,6 +373,14 @@ class Game {
             GameManager.UpdateScore(currentWord);
         }
         GameManager.ClearSelection();
+    }
+
+
+    MakeWild(tile) {
+        if (GameManager.Hints > 0) {
+            tile.makeWild();
+            GameManager.Hints--;
+        }
     }
 
     AddSolvedWord(word) {
@@ -398,6 +424,7 @@ class Game {
             tile.unselect();
         })
         this.Selection = [];
+        this._$wordPreview.text(" ");
     }
 
     PopSelection() {
@@ -421,6 +448,7 @@ class Game {
         }
 
         this._select(tile);
+        this._$wordPreview.text(this.CurrentWord().toUpperCase());
     }
 
     _select(tile) {
@@ -434,6 +462,11 @@ class Game {
 };
 
 $(document).ready(() => {
-    GameManager = new Game($(".game-container"), $(".game-score"), $(".words-container"));
+    GameManager = new Game(
+        $(".game-container"),
+        $(".game-score"),
+        $(".words-container"),
+        $(".word-preview-container"),
+    );
     GameManager.Start();
 });

@@ -1,7 +1,7 @@
 ﻿body {
     margin: 0px;
     padding: 0px;
-    background: black;
+    background-color: black;
     touch-action: pinch-zoom;
 }
 .game-container {
@@ -72,11 +72,13 @@
     color: white;
 }
 
-.dbg {
-    position:fixed;
-    width: 15px;
-    height: 15px;
-    left: 200px;
-    top: 200px;
-    background-color: magenta;
+.word-preview-container {
+    color: white;
+    font-size: 35px;
+    min-height: 35px;
+    line-height: 35px;
+    font-family: monospace;
+    text-align: center;
+    user-select: none;
+    text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
 }
