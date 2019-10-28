@@ -67,3 +67,12 @@
     font-family: sans-serif;
     color: white;
 }
+
+.dbg {
+    position:fixed;
+    width: 15px;
+    height: 15px;
+    left: 200px;
+    top: 200px;
+    background-color: magenta;
+}

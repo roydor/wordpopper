@@ -1,5 +1,5 @@
 ﻿TILE_SIZE = 80;
-PADDING = 15;
+PADDING = 0;
 
 _GRID_WIDTH_TILES = 10;
 _GRID_HEIGHT_TILES = 7;
@@ -55,6 +55,17 @@ class Tile {
         return PADDING + this.row * (TILE_SIZE + PADDING);
     }
 
+    touchIsClose(x, y) {
+        let tileRadius = TILE_SIZE / 2;
+        let centerX = this.left() + tileRadius;
+        let centerY = this.top() + tileRadius;
+
+        let dx = centerX - x;
+        let dy = centerY - y;
+
+        return dx * dx + dy * dy < tileRadius * tileRadius;
+    }
+
     updatePosition(newRow, newCol) {
         this.row = newRow;
         this.col = newCol;
@@ -83,13 +94,6 @@ class Tile {
         });
     }
 
-    _onPointerEnter(ev) {
-        if (GameManager.PointerDown) {
-            var tile = GameManager.Grid.getFromDiv(ev.target);
-            if (tile) GameManager.Select(tile);
-        }
-    }
-
     _createElement() {
         let $div = $(document.createElement("div"));
         let $score = $(document.createElement("div"));
@@ -115,8 +119,6 @@ class Tile {
             "height": `${TILE_SIZE}px`,
             "line-height": `${TILE_SIZE}px`,
         });
-        
-        $div.on("pointerenter", this._onPointerEnter);
 
         this._$div = $div;
     }
@@ -277,10 +279,23 @@ class Game {
             "height": `${PADDING + _GRID_HEIGHT_TILES * (TILE_SIZE + PADDING)}px`,
         });
 
-        this._$container.on("mousedown pointerdown", this._onPointerDown);
-        this._$container.on("mouseup pointerup", this._onPointerUp);
+        this._$container.on("pointerdown", this._onPointerDown);
+        this._$container.on("pointerup", this._onPointerUp);
+        this._$container.on("pointermove", this._onPointerMove);
 
         this._constructGrid();
+    }
+
+    _onPointerMove(ev) {
+        if (GameManager.PointerDown) {
+            let x = ev.clientX;
+            let y = ev.clientY;
+            var target = document.elementFromPoint(x, y);
+            var tile = GameManager.Grid.getFromDiv(target);
+
+            if (tile && tile.touchIsClose(x, y))
+                GameManager.Select(tile);
+        }
     }
 
     _onPointerDown(ev) {
