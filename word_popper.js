@@ -55,6 +55,14 @@ class Tile {
         return PADDING + this.row * (TILE_SIZE + PADDING);
     }
 
+    makeWild() {
+        this.letter = " ";
+        this.score = _LETTER_SCORES[" "];
+
+        this._$div.children(".letter").text(this.letter);
+        this._$div.children(".score").text(this.score);
+    }
+
     touchIsClose(x, y) {
         let tileRadius = TILE_SIZE / 2;
         let centerX = this.left() + tileRadius;
@@ -146,6 +154,7 @@ function generateLetterScores(scoreMap) {
 
 // https://scrabble.hasbro.com/en-us/faq
 _LETTER_SCORES = generateLetterScores({
+    " ": 0,
     aeioulnstr: 1,
     dg: 2,
     bcmp: 3,
@@ -157,6 +166,7 @@ _LETTER_SCORES = generateLetterScores({
 
 
 _LETTERS = generateLetterFrequencies({
+    " ": 2,
     a: 9,
     b: 2,
     c: 2,
@@ -266,6 +276,7 @@ class Game {
         this._score = 0;
         this.PointerDown = false;
         this.Selection = [];
+        this.Hints = 3;
     }
 
     _constructGrid() {
@@ -282,6 +293,7 @@ class Game {
         this._$container.on("pointerdown", this._onPointerDown);
         this._$container.on("pointerup", this._onPointerUp);
         this._$container.on("pointermove", this._onPointerMove);
+        this._$container.on("dblclick", this._onDoubleClick);
 
         this._constructGrid();
     }
@@ -298,15 +310,40 @@ class Game {
         }
     }
 
+    _onDoubleClick(ev) {
+        if (GameManager.Hints > 0) {
+            var tile = GameManager.Grid.getFromDiv(ev.target);
+            tile.makeWild();
+            GameManager.Hints--;
+        }
+    }
+
     _onPointerDown(ev) {
         GameManager.PointerDown = true;
         var tile = GameManager.Grid.getFromDiv(ev.target);
         if (tile) GameManager.Select(tile);
     }
 
+
+    _wildWordFind(wildWord) {
+        if (WordList.has(wildWord)) {
+            return wildWord;
+        }
+        let pattern = wildWord.split(" ").join(".");
+        let regex = new RegExp(pattern);
+        for (let word of WordList) {
+            if (word.length != wildWord.length)
+                continue;
+            if (regex.test(word))
+                return word;
+        }
+        return null;
+    }
+
     _onPointerUp() {
         GameManager.PointerDown = false;
-        var currentWord = GameManager.CurrentWord();
+
+        var currentWord = GameManager._wildWordFind(GameManager.CurrentWord());
         if (WordList.has(currentWord)) {
             GameManager.PopSelection();
             GameManager.AddSolvedWord(currentWord);
