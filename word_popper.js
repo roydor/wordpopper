@@ -323,6 +323,7 @@ class Game {
 
     _onPointerMove(ev) {
         if (GameManager.PointerDown) {
+            GameManager._clearLongTap();
             let x = ev.clientX;
             let y = ev.clientY;
             var target = document.elementFromPoint(x, y);
@@ -330,7 +331,6 @@ class Game {
             var lastTile = GameManager.GetLastSelected();
 
             if (tile && tile != lastTile && tile.touchIsClose(x, y)) {
-                GameManager._clearLongTap();
                 GameManager.Select(tile);
             }
         }
@@ -345,7 +345,6 @@ class Game {
             GameManager._startLongTap();
         }
     }
-
 
     _wildWordFind(wildWord) {
         if (WordList.has(wildWord)) {
