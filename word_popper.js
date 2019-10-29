@@ -221,6 +221,26 @@ class Grid {
         this._numCols = numCols;
 
         this._initialize();
+        this._undo = null;
+    }
+
+    pushUndo() {
+        this._undo = JSON.parse(JSON.stringify(this));
+    }
+
+    popUndo() {
+        let undo = this._undo;
+        if (undo) {
+            this._grid = undo._grid;
+            this._divMap = undo._divMap;
+            this._undo = undo.undo;
+
+            for (const row of this._grid) {
+                for (const tile of row) {
+                    tile.refreshDivs();
+                }
+            }
+        }
     }
 
     _initialize() {
@@ -231,12 +251,13 @@ class Grid {
                 this._$container.append(tile.div());
 
                 this._divMap.set(tile.div(), tile);
-                this.updateTilePosition(tile, row, col);
+                this._updateTilePosition(tile, row, col);
             }
         }
     }
 
     makeWild(tile) {
+        //this.pushUndo();
         tile.makeWild();
     }
 
@@ -244,13 +265,14 @@ class Grid {
         return this._divMap.get(div) || this._divMap.get(div.parentNode);
     }
 
-    updateTilePosition(tile, newRow, newCol) {
+    _updateTilePosition(tile, newRow, newCol) {
         this._grid[tile.row][tile.col] = null;
         this._grid[newRow][newCol] = tile;
         tile.updatePosition(newRow, newCol);
     }
 
     removeTiles(tiles) {
+        //this.pushUndo();
         for (let tile of tiles) {
             this.removeTile(tile);
         }            
@@ -270,7 +292,7 @@ class Grid {
                 continue; // Don't break incase of a C shape word.
 
             // move it down
-            this.updateTilePosition(nextTile, row + 1, tile.col);
+            this._updateTilePosition(nextTile, row + 1, tile.col);
             gravityMovedTile = true;
         }
 
@@ -281,7 +303,7 @@ class Grid {
                     var nextTile = this._grid[row][col];
                     if (!nextTile)
                         continue;
-                    this.updateTilePosition(nextTile, row, col - 1);
+                    this._updateTilePosition(nextTile, row, col - 1);
                 }
             }
         }
@@ -383,6 +405,13 @@ class Game {
         return null;
     }
 
+    ScoreCurrentWord() {
+        let sum = 0;
+        this.Selection.forEach((tile) => sum += tile.score);
+        sum *= this.Selection.length / 2;
+        return sum;
+    }
+
     _onPointerUp() {
         GameManager.PointerDown = false;
         GameManager._clearLongTap();
@@ -392,9 +421,9 @@ class Game {
         var currentWord = GameManager._wildWordFind(currentWordWithWilds);
         if (WordList.has(currentWord)) {
             GameManager.PopSelection();
-            let score = GameManager.ScoreWord(currentWordWithWilds);
-            GameManager.Log(`Found ${currentWord} (${+score.total})`);
-            GameManager.UpdateScore(score.total);
+            let score = GameManager.ScoreCurrentWord();
+            GameManager.Log(`Found ${currentWord} (${score})`);
+            GameManager.UpdateScore(score);
         }
         GameManager.ClearSelection();
     }
@@ -402,7 +431,6 @@ class Game {
 
     MakeWild() {
         if (GameManager.Hints-- > 0) {
-
             GameManager.Log(`Turned ${GameManager.GetLastSelected().letter.toUpperCase()} wild! (${GameManager.Hints} wildcards remaining.)`);
             this.Grid.makeWild(GameManager.Selection[0]);
         }
@@ -410,25 +438,6 @@ class Game {
 
     Log(msg) {
         this._$words.append(`<div>${msg}</div>`);
-    }
-
-    AddSolvedWord(word) {
-        let score = this.ScoreWord(word);
-        this._$words.append(`<div>${word} (base:${score.base} + length_bonus:${score.bonus})</div>`);
-    }
-
-    ScoreWord(word) {
-        let sum = 0;
-        for (const c of word) {
-            sum += _LETTER_SCORES[c];
-        }
-        let bonus = Math.floor(sum * word.length / 2) - sum;
-
-        return {
-            base: sum,
-            bonus: bonus,
-            total: sum + bonus,
-        }
     }
 
     UpdateScore(value) {
