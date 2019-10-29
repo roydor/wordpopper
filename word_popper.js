@@ -32,7 +32,7 @@ Math.random = function (max, min) {
 function distance(x1, y1, x2, y2) {
     let dx = x2 - x1;
     let dy = y2 - y1;
-    return Math.sqrt(dx * dx + dy + dy);
+    return Math.sqrt(dx * dx + dy * dy);
 };
 
 
@@ -45,6 +45,20 @@ class Tile {
 
         this._createElement();
         this.updatePosition(row, col);
+    }
+
+    refreshDivs() {
+        this._$div.removeClass("vowel");
+        this._$div.removeClass("wild");
+
+        if ("aeiouy".includes(this.letter))
+            this._$div.addClass("vowel");
+
+        if (this.letter == " ")
+            this._$div.addClass("wild");
+
+        this._$div.children(".letter").text(this.letter.toUpperCase());
+        this._$div.children(".score").text(this.score);
     }
 
     div() {
@@ -64,11 +78,8 @@ class Tile {
     makeWild() {
         this.letter = " ";
         this.score = _LETTER_SCORES[" "];
-        this._$div.removeClass("vowel");
-        this._$div.addClass("wild");
 
-        this._$div.children(".letter").text(this.letter);
-        this._$div.children(".score").text(this.score);
+        this.refreshDivs();
     }
 
     touchIsClose(x, y) {
@@ -115,20 +126,10 @@ class Tile {
         $text.addClass("letter");
         $score.addClass("score");
 
-        $text.text(this.letter.toUpperCase());
-        $score.text(this.score);
-
         $div.append($text[0]);
         $div.append($score[0]);
 
         $div.addClass('tile');
-
-        if ("aeiouy".includes(this.letter))
-            $div.addClass("vowel");
-
-        if (this.letter == " ")
-            $div.addClass("wild");
-        // are variables in css a thing?
 
         $div.css({
             "width": `${TILE_SIZE}px`,
@@ -137,6 +138,7 @@ class Tile {
         });
 
         this._$div = $div;
+        this.refreshDivs();
     }
 }
 
@@ -234,6 +236,10 @@ class Grid {
         }
     }
 
+    makeWild(tile) {
+        tile.makeWild();
+    }
+
     getFromDiv(div) {
         return this._divMap.get(div) || this._divMap.get(div.parentNode);
     }
@@ -244,7 +250,14 @@ class Grid {
         tile.updatePosition(newRow, newCol);
     }
 
+    removeTiles(tiles) {
+        for (let tile of tiles) {
+            this.removeTile(tile);
+        }            
+    }
+
     removeTile(tile) {
+        tile.pop();
         this._grid[tile.row][tile.col] = null;
         this._divMap.delete(tile.div());
 
@@ -300,7 +313,7 @@ class Game {
         this._longTapStartX = x;
         this._longTapStartY = y;
         this._longTapToken = setTimeout(() => {
-            GameManager.MakeWild(GameManager.Selection[0]);
+            GameManager.MakeWild();
             GameManager.ClearSelection();
         }, 750);
     }
@@ -374,22 +387,29 @@ class Game {
         GameManager.PointerDown = false;
         GameManager._clearLongTap();
 
-        var currentWord = GameManager._wildWordFind(GameManager.CurrentWord());
+        var currentWordWithWilds = GameManager.CurrentWord();
+
+        var currentWord = GameManager._wildWordFind(currentWordWithWilds);
         if (WordList.has(currentWord)) {
             GameManager.PopSelection();
-            console.log("BUG: Wildcards are getting scored with their wild value, not 0.");
-            GameManager.AddSolvedWord(currentWord);
-            GameManager.UpdateScore(currentWord);
+            let score = GameManager.ScoreWord(currentWordWithWilds);
+            GameManager.Log(`Found ${currentWord} (${+score.total})`);
+            GameManager.UpdateScore(score.total);
         }
         GameManager.ClearSelection();
     }
 
 
-    MakeWild(tile) {
+    MakeWild() {
         if (GameManager.Hints-- > 0) {
-            this._$words.append(`<div>Turned ${tile.letter.toUpperCase()} wild! (${GameManager.Hints} wildcards remaining.)</div>`)
-            tile.makeWild();
+
+            GameManager.Log(`Turned ${GameManager.GetLastSelected().letter.toUpperCase()} wild! (${GameManager.Hints} wildcards remaining.)`);
+            this.Grid.makeWild(GameManager.Selection[0]);
         }
+    }
+
+    Log(msg) {
+        this._$words.append(`<div>${msg}</div>`);
     }
 
     AddSolvedWord(word) {
@@ -411,8 +431,8 @@ class Game {
         }
     }
 
-    UpdateScore(word) {
-        this._score += this.ScoreWord(word).total;
+    UpdateScore(value) {
+        this._score += value;
         this._$score.text(this._score);
     }
 
@@ -437,10 +457,7 @@ class Game {
     }
 
     PopSelection() {
-        this.Selection.forEach((tile) => {
-            tile.pop();
-            this.Grid.removeTile(tile);
-        })
+        this.Grid.removeTiles(this.Selection);
     }
 
     Select(tile) {
