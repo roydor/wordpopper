@@ -17,7 +17,7 @@
     box-sizing: border-box;
     background-color: lightskyblue;
     color: white;
-    font-size: 35px;
+    font-size: 50px;
     font-family: sans-serif;
     position: absolute;
     text-align: center;
@@ -46,8 +46,8 @@
 
 .tile .score {
     position: absolute;
-    font-size: 13px;
-    line-height: 13px;
+    font-size: 20px;
+    line-height: 20px;
     padding:3px;
     text-align: right;
     bottom: 0px;

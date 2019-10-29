@@ -336,7 +336,7 @@ class Game {
             var tile = GameManager.Grid.getFromDiv(target);
             var lastTile = GameManager.GetLastSelected();
 
-            if (distance(x, y, GameManager._longTapStartX, GameManager._longTapStartY) > 5)
+            if (distance(x, y, GameManager._longTapStartX, GameManager._longTapStartY) > 10)
                 GameManager._clearLongTap();
 
             if (tile && tile != lastTile && tile.touchIsClose(x, y)) {
